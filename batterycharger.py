@@ -1,6 +1,8 @@
 
 # coding: utf-8
 
+#TO DO:  add power throttling to prevent batt discharge when SOC < 20% or whatever
+
 import numpy as np
 
 class Battery:
@@ -41,7 +43,8 @@ class Battery:
 class Adaptor:
   
     def __init__(self, power=60, voltage=20):
-  
+        
+        self.rating=power
         Aclim_tol  = 0.05
     
         self.power=power*(1-Aclim_tol)
@@ -55,7 +58,8 @@ class Adaptor:
 class Charger:
   
     def __init__(self, adaptor, battery, psystem=0, imax=7.5):  #adaptor and battery are objects
-  
+        
+        self.adaptor_rating=adaptor.rating
         Efficiency = 0.95
         self.pmax=adaptor.power*Efficiency
         self.imax=imax
@@ -97,9 +101,9 @@ class Charger:
             '''
             quadcoeff = [1, -self.vbat, -(self.pmax-self.psys)*self.rbat]
             
-            vsys1 = max(np.roots(quadcoeff))   #assumes charge current limited by parasitic resistance
+            vsys1 = max(np.roots(quadcoeff))   #assumes charge current is limited by parasitic resistance rbat
             
-            #in CV charge mode (SOC>80%), the battery charge FET limits the max vbat voltage and the battery chemistry limits the charge current.  
+            #in CV charge mode (SOC>80%), the smart battery's charge FET limits the max vbat voltage and the battery chemistry limits the charge current.  
             #Battery charge FET turns off when SOC =100%
             icharge = min(battery.ibat_max,(vsys1-self.vbat)/self.rbat)
             
@@ -127,7 +131,8 @@ class Charger:
             iout = pout/vsys
             return [round(x,2) for x in [pout,icharge,vsys,iout]]
 
-        def loop_maxcurrent():
+        def loop_maxcurrent():   #a new loop designed to limit the FET and inductor current, specifically when vbat=low and psys=high.  system will
+            #need to throttle when this loop engages.  
             '''
       Derive quadratic equation for Vsys at max output current
       
@@ -178,9 +183,10 @@ class Charger:
             print(loop_errors_by_loop)
         
         self.pout, self.icharge, self.vsys, self.iout = charger_state_dominant   
+        self.charger_state = charger_state_dominant
         
 def batterystate_vs_t(charger):
-    adaptor_state=Adaptor(power=charger.pmax)
+    adaptor_state=Adaptor(power=charger.adaptor_rating)   
           
     battery_stack=charger.nstack
     battery_Whr=charger.Whr
@@ -193,19 +199,32 @@ def batterystate_vs_t(charger):
     idx=0
     timelist=[] 
     soclist=[]
+    poutlist=[]
     vbatlist=[]
+    vsyslist=[]
+    ioutlist=[]
     ichargelist=[]
-    while soc_cum < 0.999:
+    while soc_cum < 0.999 and idx < 600:
         battery_state = Battery(battery_stack,battery_Whr,soc=soc_cum)
         charger_state = Charger(adaptor_state,battery_state,psystem=system_power,imax=charger_maxcurrent)
         ichargerate   = charger_state.icharge*1/battery_state.Ahr
         soc_cum       = soc_cum + ichargerate*timestep_hrs
-        timelist.append(idx*timestep_hrs)
+        timelist.append(round(idx*timestep_hrs,2))
         soclist.append(soc_cum)
+        poutlist.append(charger_state.pout)
         vbatlist.append(battery_state.voltage)
-        ichargelist.append(ichargerate)
+        vsyslist.append(charger_state.vsys)
+        ioutlist.append(charger_state.iout)
+        ichargelist.append(charger_state.icharge) #ichargerate)
         idx+=1
-    return [timelist,soclist,vbatlist,ichargelist]
+    return [timelist,soclist,poutlist,vbatlist,vsyslist,ioutlist,ichargelist]
+
+def chargetime(vadaptor=20,padaptor=60,ncell=2, whr=50, psystem=0,imax=8):
+    adaptor = Adaptor(padaptor,vadaptor)
+    battery = Battery(ncell,whr,soc=0.01)
+    charger = Charger(adaptor,battery,psystem,imax)
+    time_list = batterystate_vs_t(charger)[0]
+    return time_list[-1]   #returns last element in time list
     
 
             
