@@ -40,7 +40,7 @@ class Battery:
       
       
  
-class Adaptor:
+class Adapter:
   
     def __init__(self, power=60, voltage=20):
         
@@ -57,40 +57,35 @@ class Adaptor:
     
 class Charger:
   
-    def __init__(self, adaptor, battery, psystem=0, imax=7.5):  #adaptor and battery are objects
+    def __init__(self, adapter, battery, psystem=0, imax=7.5):  #adapter and battery are objects
         
-        self.adaptor_rating=adaptor.rating
+        self.adapter = adapter
         Efficiency = 0.95
-        self.pmax=adaptor.power*Efficiency
+        self.pmax=self.adapter.power*Efficiency
         self.imax=imax
         self.psys=psystem
+
+        self.battery=battery
     
-        self.nstack=battery.nstack
-        self.Whr=battery.Whr
-        self.rbat=battery.res
-      
         voltheadroom=0.3      #because of rbat, vsys must be > vbat to charge battery past soc=80%
         self.vsysmax=battery.vmax+voltheadroom
         self.vsysmin=battery.vmin     
-        self.vbat=battery.voltage
-        self.soc=battery.soc
-    
-      
+        
         self.ichargemax=0.8*battery.Ahr       #charging current limited by battery and charger setting
       
         self.VRhot = False
       
             
-        # 4 control loops - adaptor power, charge current, system voltage, max charger current
+        # 4 control loops - adapter power, charge current, system voltage, max charger current
         # each loop returns 4 state variables, 1 for each control loop
 
         def quadsolver(coeff):
             a, b, c = coeff
             return (-b+(b**2-4*a*c)**0.5)/(2*a)
           
-        def loop_adaptorpwr():
+        def loop_adapterpwr():
             '''
-      Derive quadratic equation for Vsys at max output power.  roots will be complex when Psys>Padaptor.  
+      Derive quadratic equation for Vsys at max output power.  roots will be complex when Psys>Padapter.  
       but there should be a real solution for when negative current in battery simplest band aid is to flip 
       polarity of "c" quad coeff when this is the case or perhaps taking magnitude of complex root will give 
       the proper solution of Vsys.  need to verify.
@@ -115,7 +110,7 @@ class Charger:
 
       note also that Vsys = Vbat/2 at this condition.
             '''
-            quadcoeff = [1, -self.vbat, -(self.pmax-self.psys)*self.rbat]
+            quadcoeff = [1, -self.battery.voltage, -(self.pmax-self.psys)*self.battery.res]
             #vsys1 = max(np.roots(quadcoeff))   
             
             #assumes charge current is limited by parasitic resistance rbat
@@ -124,28 +119,29 @@ class Charger:
             
             #in CV charge mode (SOC>80%), the smart battery's charge FET limits the max vbat voltage and the battery chemistry limits the charge current.  
             #Battery charge FET turns off when SOC =100%
-            icharge = min(battery.ibat_max,(vsys1-self.vbat)/self.rbat)
+            icharge = min(battery.ibat_max,(vsys1-self.battery.voltage)/self.battery.res)
             
-            vsys = self.vbat + icharge*self.rbat
+            vsys = self.battery.voltage + icharge*self.battery.res
             isys = self.psys/vsys
             iout = icharge + isys 
 
-            self.pout = vsys*iout
+            self.pout = vsys*iout - 0.01
             return [self.pout,icharge,vsys,iout]
     
         def loop_chargecurrent():
-            vsys = self.vbat + self.ichargemax*self.rbat
+            vsys = self.battery.voltage + self.ichargemax*self.battery.res
             pout = vsys*self.ichargemax + self.psys
             iout = pout/vsys
             return [pout,self.ichargemax,vsys,iout]
 
         def loop_voltage():
             vsys = self.vsysmax
-            icharge_rpath_limited = (vsys-self.vbat)/self.rbat
+            icharge_rpath_limited = (vsys-self.battery.voltage)/self.battery.res
 
             #in CV charge mode (SOC>80%), the battery charge FET limits the max vbat voltage and the battery chemistry limits the charge current.  
             #Battery charge FET turns off when SOC =100%
-            icharge = min(battery.ibat_max,icharge_rpath_limited)
+            
+            icharge = icharge_rpath_limited
             pout = vsys*icharge + self.psys
             iout = pout/vsys
             return [pout,icharge,vsys,iout]
@@ -161,10 +157,10 @@ class Charger:
            
       Vsys^2 - (Vbat+imax*Rbat)Vsys + Psys*Rbat = 0
             '''
-            quadcoeff = [1, -(self.vbat+self.imax*self.rbat), self.psys*self.rbat]
+            quadcoeff = [1, -(self.battery.voltage+self.imax*self.battery.res), self.psys*self.battery.res]
             #vsys = max(np.roots(quadcoeff))
             vsys = quadsolver(quadcoeff)
-            icharge = (vsys - self.vbat)/self.rbat
+            icharge = (vsys - self.battery.voltage)/self.battery.res
             pout = vsys*icharge + self.psys
             return [pout,icharge,vsys,self.imax]
         
@@ -178,6 +174,24 @@ class Charger:
             min_error = min([min(errors) for errors in listoflists if all_pos(errors)])
             idx = [i for i, errors in enumerate(listoflists) if min(errors) == min_error][0]
             return idx
+
+        def min_error_idx_numpy(listoflists):
+            alistoflists=np.array(listoflists)
+            posmask = alistoflists>0
+            min_pos_error = np.amin(alistoflists[posmask])
+            def all_pos(row):
+                flag=True
+                for i in row:
+                    if i < 0:
+                        flag=False
+                return flag
+            for i, errors in enumerate(alistoflists):
+                if all_pos(errors) and np.fabs(np.amin(errors) - min_pos_error) <= 0.01:
+                    idx = i
+
+            #min_error = np.amin([np.amin(errors) for errors in alistoflists if all_pos(errors)])
+            #idx = [i for i, errors in enumerate(alistoflists) if np.amin(errors) == min_error][0]
+            return idx
         
 #Main init program.  First run all loops.  The loop with all positive errors AND the lowest error establishes the state of the charger
 
@@ -186,36 +200,38 @@ class Charger:
             # self.VRhot = True
     
         charger_refs = [round(x,2) for x in [self.pmax,self.ichargemax,self.vsysmax,self.imax]]
-        loop_list    = [loop_adaptorpwr,loop_chargecurrent,loop_voltage,loop_maxcurrent]
+        loop_list    = [loop_adapterpwr,loop_chargecurrent,loop_voltage,loop_maxcurrent]
         
-        charger_states_by_loop = [loop() for loop in loop_list]  #remember that each loop function returns a 4 element list of charger attributes/params
+        self.charger_states_by_loop = [loop() for loop in loop_list]  #remember that each loop function returns a 4 element list of charger attributes/params
         loop_errors_by_loop = []
-        for charger_state in charger_states_by_loop:
-            loop_errors_by_loop.append([round(ref - charger_state[i],2) for i, ref in enumerate(charger_refs)])
+        for charger_state in self.charger_states_by_loop:
+            loop_errors_by_loop.append([(ref - charger_state[i]) for i, ref in enumerate(charger_refs)])  #round delta
         try:
             idx = min_error_idx(loop_errors_by_loop)
-            charger_state_dominant = charger_states_by_loop[idx]
+            charger_state_dominant = self.charger_states_by_loop[idx]
             if idx==3:
                 self.VRhot = True
         except:
             print(charger_refs)
-            print(charger_states_by_loop)
+            print(self.charger_states_by_loop)
             print(loop_errors_by_loop)
         
         self.pout, self.icharge, self.vsys, self.iout = charger_state_dominant   
         self.charger_state = charger_state_dominant
-        
+        self.error_idx = idx
+        #elf.csbl=charger_states_by_loop
+
 def batterystate_vs_t(charger):
-    adaptor_state=Adaptor(power=charger.adaptor_rating)   
+    adapter_state=Adapter(power=charger.adapter.rating)   
           
-    battery_stack=charger.nstack
-    battery_Whr=charger.Whr
+    battery_stack=charger.battery.nstack
+    battery_Whr=charger.battery.Whr
         
     system_power=charger.psys
     charger_maxcurrent=charger.imax
         
     timestep_hrs=1/60   
-    soc_cum=charger.soc
+    soc_cum=charger.battery.soc
     idx=0
     timelist=[] 
     soclist=[]
@@ -226,7 +242,7 @@ def batterystate_vs_t(charger):
     ichargelist=[]
     while soc_cum < 0.99 and idx < 600:
         battery_state = Battery(battery_stack,battery_Whr,soc=soc_cum)
-        charger_state = Charger(adaptor_state,battery_state,psystem=system_power,imax=charger_maxcurrent)
+        charger_state = Charger(adapter_state,battery_state,psystem=system_power,imax=charger_maxcurrent)
         ichargerate   = charger_state.icharge*1/battery_state.Ahr
         soc_cum       = soc_cum + ichargerate*timestep_hrs
         timelist.append(round(idx*timestep_hrs,2))
@@ -239,10 +255,10 @@ def batterystate_vs_t(charger):
         idx+=1
     return [timelist,soclist,poutlist,vbatlist,vsyslist,ioutlist,ichargelist]
 
-def chargetime(vadaptor=20,padaptor=60,ncell=2, whr=50, psystem=0,imax=8):
-    adaptor = Adaptor(padaptor,vadaptor)
+def chargetime(vadapter=20,padapter=60,ncell=2, whr=50, psystem=0,imax=8):
+    adapter = Adapter(padapter,vadapter)
     battery = Battery(ncell,whr,soc=0.01)
-    charger = Charger(adaptor,battery,psystem,imax)
+    charger = Charger(adapter,battery,psystem,imax)
     time_list = batterystate_vs_t(charger)[0]
     return time_list[-1]   #returns last element in time list
     
