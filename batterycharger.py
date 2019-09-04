@@ -17,7 +17,7 @@ class Battery:
         self.vcellnom=3.7
         self.vcellmax=4.35
     
-        self.res=0.2  # Rbattery.  Path resistance, in Ohms, between the battery and charger output. Includes cell chemistry + busbar+connectors+cable+beads+pcb+BFET
+        self.res=0.1  # Rbattery.  Path resistance, in Ohms, between the battery and charger output. Includes cell chemistry + busbar+connectors+cable+beads+pcb+BFET
     
         self.vmin=self.nstack*self.vcellmin
         self.vnom=self.nstack*self.vcellnom
@@ -30,11 +30,12 @@ class Battery:
     
         self.voltage=max(self.vmin,min(self.vmax, self.nstack*vcell))  #battery voltage has upper and lower clamp
     
-        m=[17.5,1,0.1]  #coefficients from Mathcad curve fit
+        #m=[17.5,1,0.1]  #coefficients from Mathcad curve fit
+        m=[9.5,1,0.1]  #coefficients from Mathcad curve fit
         #when soc <80%, charger sets charge current from value provided by battery.
         #when soc >=80%, battery chemistry limits charge current.  battery impedance increases until SOC=100%, when smart
         #battery will then open its charge FET
-        self.irate= min(0.8,m[0]*(self.soc-m[1])**2 + m[2])*0**(self.soc>0.999)
+        self.irate= min(1,m[0]*(self.soc-m[1])**2 + m[2])*0**(self.soc>0.99)
       
         self.ibat_max = self.irate*self.Ahr   
       
@@ -140,8 +141,9 @@ class Charger:
 
             #in CV charge mode (SOC>80%), the battery charge FET limits the max vbat voltage and the battery chemistry limits the charge current.  
             #Battery charge FET turns off when SOC =100%
+            icharge_battery_limited = self.battery.ibat_max
             
-            icharge = icharge_rpath_limited
+            icharge = min(icharge_rpath_limited,icharge_battery_limited)
             pout = vsys*icharge + self.psys
             iout = pout/vsys
             return [pout,icharge,vsys,iout]
@@ -245,7 +247,7 @@ def batterystate_vs_t(charger):
         charger_state = Charger(adapter_state,battery_state,psystem=system_power,imax=charger_maxcurrent)
         ichargerate   = charger_state.icharge*1/battery_state.Ahr
         soc_cum       = soc_cum + ichargerate*timestep_hrs
-        timelist.append(round(idx*timestep_hrs,2))
+        timelist.append(round(idx*timestep_hrs,3))
         soclist.append(soc_cum)
         poutlist.append(charger_state.pout)
         vbatlist.append(battery_state.voltage)
