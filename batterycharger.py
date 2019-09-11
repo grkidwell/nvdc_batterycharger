@@ -7,7 +7,7 @@ import numpy as np
 
 class Battery:
   
-    def __init__(self,nstack=2,Whr=50, soc=0.3):
+    def __init__(self,nstack=2,Whr=50,soc=0.3,res=0.1):
     
         self.nstack=nstack    # 2S, 3S, or 4S
         self.Whr=Whr          # Watt*hrs
@@ -17,7 +17,7 @@ class Battery:
         self.vcellnom=3.7
         self.vcellmax=4.35
     
-        self.res=0.1  # Rbattery.  Path resistance, in Ohms, between the battery and charger output. Includes cell chemistry + busbar+connectors+cable+beads+pcb+BFET
+        self.res=res # Rbattery.  Path resistance, in Ohms, between the battery and charger output. Includes cell chemistry + busbar+connectors+cable+beads+pcb+BFET
     
         self.vmin=self.nstack*self.vcellmin
         self.vnom=self.nstack*self.vcellnom
@@ -177,22 +177,23 @@ class Charger:
             idx = [i for i, errors in enumerate(listoflists) if min(errors) == min_error][0]
             return idx
 
-        def min_error_idx_numpy(listoflists):
-            alistoflists=np.array(listoflists)
-            posmask = alistoflists>0
-            min_pos_error = np.amin(alistoflists[posmask])
-            def all_pos(row):
-                flag=True
-                for i in row:
-                    if i < 0:
-                        flag=False
-                return flag
-            for i, errors in enumerate(alistoflists):
-                if all_pos(errors) and np.fabs(np.amin(errors) - min_pos_error) <= 0.01:
-                    idx = i
+        def min_error_idx_numpy(errorlistoflists):
+            '''
+        The dominant control loop(Padaptor,Icharge,Vsysmax,Iout) defines the state of the system, which consists of
+        the 4 state variables: pout,icharge,vsys,iout 
+        This function determines which control loop is dominant by checking 2 criteria:
+        1) all 4 state variable have positive errors (no controlled parameter is > it's reference threshold)
+        2) contains the state variable with the smallest error of those states satisfying criteria #1.
 
-            #min_error = np.amin([np.amin(errors) for errors in alistoflists if all_pos(errors)])
-            #idx = [i for i, errors in enumerate(alistoflists) if np.amin(errors) == min_error][0]
+            '''
+            errorarray=np.array(errorlistoflists)
+            positive_threshold = -0.01  #small offset to "positive error" criteria   
+            posmask_by_element = errorarray>=positive_threshold
+            posmask_by_loop = np.all(posmask_by_element,axis=1) #all errors in loop >= threshold
+            min_pos_error = np.amin(errorarray[np.all(errorarray>=positive_threshold, axis=1)])
+            for loop, errors in enumerate(errorarray):
+                if posmask_by_loop[loop] and np.amin(errors)== min_pos_error:
+                    idx = loop
             return idx
         
 #Main init program.  First run all loops.  The loop with all positive errors AND the lowest error establishes the state of the charger
@@ -209,7 +210,7 @@ class Charger:
         for charger_state in self.charger_states_by_loop:
             loop_errors_by_loop.append([(ref - charger_state[i]) for i, ref in enumerate(charger_refs)])  #round delta
         try:
-            idx = min_error_idx(loop_errors_by_loop)
+            idx = min_error_idx_numpy(loop_errors_by_loop)
             charger_state_dominant = self.charger_states_by_loop[idx]
             if idx==3:
                 self.VRhot = True
@@ -257,6 +258,7 @@ def batterystate_vs_t(charger):
         idx+=1
     return [timelist,soclist,poutlist,vbatlist,vsyslist,ioutlist,ichargelist]
 
+#need to look at below function.  may only need charger object as input parameter.
 def chargetime(vadapter=20,padapter=60,ncell=2, whr=50, psystem=0,imax=8):
     adapter = Adapter(padapter,vadapter)
     battery = Battery(ncell,whr,soc=0.01)
