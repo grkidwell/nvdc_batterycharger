@@ -13,6 +13,10 @@ from tornado.ioloop import IOLoop
 from scripts.chargetime import chargetime_tab
 from scripts.description import description_tab
 
+import os
+
+fileDir = os.path.dirname(os.path.abspath(__file__))
+
 app = Flask(__name__)
 
 def modify_doc(doc):
@@ -27,7 +31,7 @@ def modify_doc(doc):
 
     doc.add_root(tabs)
 
-    doc.theme = Theme(filename="flaskapp/theme.yaml")
+    doc.theme = Theme(filename=fileDir+"/"+"theme.yaml")
 
 
 @app.route('/', methods=['GET'])
