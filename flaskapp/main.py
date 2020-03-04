@@ -32,14 +32,14 @@ def modify_doc(doc):
 
 @app.route('/', methods=['GET'])
 def bkapp_page():
-    script = server_document('http://157.245.139.21:5006/bkapp')
+    script = server_document('http://localhost:5006/bkapp')
     return render_template("embed.html", script=script, template="Flask")
 
 
 def bk_worker():
     # Can't pass num_procs > 1 in this configuration. If you need to run multiple
     # processes, see e.g. flask_gunicorn_embed.py
-    server = Server({'/bkapp': modify_doc}, io_loop=IOLoop(), allow_websocket_origin=["157.245.139.21:8000"])
+    server = Server({'/bkapp': modify_doc}, io_loop=IOLoop(), allow_websocket_origin=["localhost:8000"])
     server.start()
     server.io_loop.start()
 
