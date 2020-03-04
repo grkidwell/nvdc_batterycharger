@@ -1,4 +1,5 @@
-python math model of notebook computer NVDC batterycharger architecture
+Python math model of notebook computer NVDC batterycharger architecture
+
 
 -flaskapp:  runs bokeh inside a webserver at localhost:8000
 *from commandline run "python3 main.py"
@@ -6,3 +7,5 @@ python math model of notebook computer NVDC batterycharger architecture
 
 -bokehapp: runs bokeh server.
 *from commandline run "bokeh serve --show main.py"
+
+-chargerplot_bokeh.ipynb: jupyter notebook for easy tinkering with the model
