@@ -31,7 +31,7 @@ def modify_doc(doc):
 
     doc.add_root(tabs)
 
-    doc.theme = Theme(filename=fileDir+"/"+"theme.yaml")
+    doc.theme = Theme(filename=fileDir+"/"+"misc/"+"theme.yaml")
 
 
 @app.route('/', methods=['GET'])
