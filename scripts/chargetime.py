@@ -15,7 +15,7 @@ def chargetime_tab():
         data=bc.batterystate_vs_t(bc.Charger(bc.Adapter(power=padaptor), bc.Battery(soc=soc,Whr=Whr, nstack=ns),
                                              psystem=psystem, imax=ichargermax))
         chargetime = str(data[0][-1])+'hrs'
-        df=pd.DataFrame(np.array(data[1:]).T,index=data[0],columns=['SOC','pout','vbat','vsys','iout','icharge'])
+        df=pd.DataFrame(np.array(data[1:]).T,index=data[0],columns=['SOC','pout','vbat','vsys','icharger','ibattery'])
         df.index.name='time(hr)'
         return ColumnDataSource(df)
     
@@ -67,21 +67,21 @@ def chargetime_tab():
                        ichargermax=imax_select.value)
     
 # create grid of plots
-    plot_names = ['SOC','pout','vbat','vsys','iout','icharge']    
+    plot_names = ['SOC','pout','vbat','vsys','icharger','ibattery']    
     plot_figs = {}
     for plot_num, plot_yaxis in enumerate(plot_names):
         plot_figs[plot_yaxis] = make_plot(src,plot_yaxis,plot_num)
     
-    grid = gridplot([[plot_figs['pout'], plot_figs['vsys'], plot_figs['iout']],
-                     [plot_figs['SOC'],  plot_figs['vbat'], plot_figs['icharge']]])
+    grid = gridplot([[plot_figs['pout'], plot_figs['vsys'], plot_figs['icharger']],
+                     [plot_figs['SOC'],  plot_figs['vbat'], plot_figs['ibattery']]])
     
 # Link together the x-axes for panning and zooming
     plot_figs['SOC'].x_range = \
     plot_figs['vbat'].x_range = \
-    plot_figs['icharge'].x_range = \
+    plot_figs['ibattery'].x_range = \
     plot_figs['pout'].x_range = \
     plot_figs['vsys'].x_range = \
-    plot_figs['iout'].x_range
+    plot_figs['icharger'].x_range
 
 # set up the display panel
     controls = WidgetBox(adaptorselecttitle,
