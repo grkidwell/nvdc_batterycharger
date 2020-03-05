@@ -11,8 +11,8 @@ from bokeh.palettes import Category20_16
 
 def chargetime_tab():
     
-    def make_dataset(padaptor=45,psystem=0,ichargermax=7, soc=0.01, Whr=60):
-        data=bc.batterystate_vs_t(bc.Charger(bc.Adapter(power=padaptor), bc.Battery(soc=soc,Whr=Whr),
+    def make_dataset(padaptor=45,psystem=0,ichargermax=7, soc=0.01, Whr=60, ns=3):
+        data=bc.batterystate_vs_t(bc.Charger(bc.Adapter(power=padaptor), bc.Battery(soc=soc,Whr=Whr, nstack=ns),
                                              psystem=psystem, imax=ichargermax))
         chargetime = str(data[0][-1])+'hrs'
         df=pd.DataFrame(np.array(data[1:]).T,index=data[0],columns=['SOC','pout','vbat','vsys','iout','icharge'])
@@ -29,6 +29,7 @@ def chargetime_tab():
     def update(attr, old, new):
         new_src = make_dataset(padaptor=adaptoroptions[padaptor_select.active],
                                Whr=batteryoptions[ebattery_select.active],
+                               ns=stackoptions[stack_select.active],
                                psystem=psystem_select.value,
                                ichargermax=imax_select.value)
         src.data.update(new_src.data)
@@ -39,12 +40,18 @@ def chargetime_tab():
     
     batteryoptions=[52,60,68]
     batteryselecttitle = PreText(text="Battery Capacity(Whr)")
+
+    stackoptions=[2,3,4]
+    stackselecttitle = PreText(text="Battery Stack(#S)")
     
     padaptor_select = RadioButtonGroup(name="Padaptor", labels=[str(element) for element in adaptoroptions], active=0)
     padaptor_select.on_change('active', update)
     
     ebattery_select = RadioButtonGroup(name="Ebattery", labels=[str(element) for element in batteryoptions], active=0)
     ebattery_select.on_change('active', update)
+
+    stack_select = RadioButtonGroup(name="nstack", labels=[str(element) for element in stackoptions], active=0)
+    stack_select.on_change('active', update)
     
     psystem_select = Slider(start=0, end=60, value=0, step=5, title="Psystem")
     psystem_select.on_change('value', update)
@@ -55,6 +62,7 @@ def chargetime_tab():
 # calculate the state of the system
     src = make_dataset(padaptor=adaptoroptions[padaptor_select.active],
                        Whr=batteryoptions[ebattery_select.active],
+                       ns=stackoptions[stack_select.active],
                        psystem=psystem_select.value,
                        ichargermax=imax_select.value)
     
@@ -81,7 +89,9 @@ def chargetime_tab():
                          psystem_select,
                          imax_select,
                          batteryselecttitle,
-                         ebattery_select)
+                         ebattery_select,
+                         stackselecttitle,
+                         stack_select)
     layout = row(controls,grid)
     tab = Panel(child=layout, title = "Charger State vs. Time")
     
