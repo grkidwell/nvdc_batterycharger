@@ -58,13 +58,14 @@ class Adapter:
     
 class Charger:
   
-    def __init__(self, adapter, battery, psystem=0, imax=7.5):  #adapter and battery are objects
+    def __init__(self, adapter, battery, psystem=0, imax=7.5, maxrate=0.9):  #adapter and battery are objects
         
         self.adapter = adapter
         Efficiency = 0.95
         self.pmax=self.adapter.power*Efficiency
         self.imax=imax
         self.psys=psystem
+        self.maxrate=maxrate
 
         self.battery=battery
     
@@ -72,7 +73,7 @@ class Charger:
         self.vsysmax=battery.vmax+voltheadroom
         self.vsysmin=battery.vmin     
         
-        self.ichargemax=0.8*battery.Ahr       #charging current limited by battery and charger setting
+        self.ichargemax=self.maxrate*battery.Ahr       #charging current limited by battery and charger setting
       
         self.VRhot = False
       
@@ -232,6 +233,7 @@ def batterystate_vs_t(charger):
         
     system_power=charger.psys
     charger_maxcurrent=charger.imax
+    charger_maxrate=charger.maxrate
         
     timestep_hrs=1/60   
     soc_cum=charger.battery.soc
@@ -245,7 +247,7 @@ def batterystate_vs_t(charger):
     ichargelist=[]
     while soc_cum < 0.99 and idx < 600:
         battery_state = Battery(battery_stack,battery_Whr,soc=soc_cum)
-        charger_state = Charger(adapter_state,battery_state,psystem=system_power,imax=charger_maxcurrent)
+        charger_state = Charger(adapter_state,battery_state,psystem=system_power,imax=charger_maxcurrent,maxrate=charger_maxrate)
         ichargerate   = charger_state.icharge*1/battery_state.Ahr
         soc_cum       = soc_cum + ichargerate*timestep_hrs
         timelist.append(round(idx*timestep_hrs,3))
@@ -259,10 +261,10 @@ def batterystate_vs_t(charger):
     return [timelist,soclist,poutlist,vbatlist,vsyslist,ioutlist,ichargelist]
 
 #need to look at below function.  may only need charger object as input parameter.
-def chargetime(vadapter=20,padapter=60,ncell=2, whr=50, psystem=0,imax=8):
+def chargetime(vadapter=20,padapter=60,ncell=2, whr=50, psystem=0,imax=8,maxrate=0.8):
     adapter = Adapter(padapter,vadapter)
     battery = Battery(ncell,whr,soc=0.01)
-    charger = Charger(adapter,battery,psystem,imax)
+    charger = Charger(adapter,battery,psystem,imax,maxrate)
     time_list = batterystate_vs_t(charger)[0]
     return time_list[-1]   #returns last element in time list
     
