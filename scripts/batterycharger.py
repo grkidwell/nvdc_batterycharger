@@ -119,9 +119,9 @@ class Charger:
 
             vsys1 = quadsolver(quadcoeff)
             
-            #in CV charge mode (SOC>80%), the smart battery's charge FET limits the max vbat voltage and the battery chemistry limits the charge current.  
+            #in CV charge mode (SOC>80%), the smart battery's charge FET limits the max vbat voltage?  
             #Battery charge FET turns off when SOC =100%
-            icharge = min(battery.ibat_max,(vsys1-self.battery.voltage)/self.battery.res)
+            icharge = min(self.ichargemax,(vsys1-self.battery.voltage)/self.battery.res)
             
             vsys = self.battery.voltage + icharge*self.battery.res
             isys = self.psys/vsys
@@ -142,7 +142,8 @@ class Charger:
 
             #in CV charge mode (SOC>80%), the battery charge FET limits the max vbat voltage and the battery chemistry limits the charge current.  
             #Battery charge FET turns off when SOC =100%
-            icharge_battery_limited = self.battery.ibat_max
+            #icharge_battery_limited = self.ichargemax
+            icharge_battery_limited = self.battery.irate*self.ichargemax
             
             icharge = min(icharge_rpath_limited,icharge_battery_limited)
             pout = vsys*icharge + self.psys
