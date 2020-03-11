@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 
 from bokeh.plotting import figure
-from bokeh.models import ColumnDataSource, Panel
+from bokeh.models import ColumnDataSource, Panel, HoverTool
 from bokeh.models.widgets import Slider, Tabs, RadioButtonGroup, PreText
 
 from bokeh.layouts import column, row, WidgetBox, gridplot
@@ -15,7 +15,7 @@ def chargetime_tab():
         data=bc.batterystate_vs_t(bc.Charger(bc.Adapter(power=padaptor), bc.Battery(soc=soc,Whr=Whr, nstack=ns),
                                              psystem=psystem, imax=ichargermax, maxrate=maxCrate))
         chargetime = str(data[0][-1])+'hrs'
-        df=pd.DataFrame(np.array(data[1:]).T,index=data[0],columns=['SOC','pout','vbat','vsys','icharger','ibattery'])
+        df=pd.DataFrame(np.array(data[1:]).T,index=data[0],columns=['SOC','pout','vbat','vsys','icharger','ibattery','loop_index','errors'])
         df.index.name='time(hr)'
         return ColumnDataSource(df)
     
@@ -75,7 +75,12 @@ def chargetime_tab():
     plot_names = ['SOC','pout','vbat','vsys','icharger','ibattery']    
     plot_figs = {}
     for plot_num, plot_yaxis in enumerate(plot_names):
-        plot_figs[plot_yaxis] = make_plot(src,plot_yaxis,plot_num)
+        plot=make_plot(src,plot_yaxis,plot_num)
+        hover=HoverTool(tooltips= [('loop index', '@loop_index'),
+                                   ('loop errors', '@errors')])
+        plot.add_tools(hover)
+        plot_figs[plot_yaxis] = plot
+        
     
     grid = gridplot([[plot_figs['pout'], plot_figs['vsys'], plot_figs['icharger']],
                      [plot_figs['SOC'],  plot_figs['vbat'], plot_figs['ibattery']]])

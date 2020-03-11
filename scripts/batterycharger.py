@@ -144,8 +144,9 @@ class Charger:
             #Battery charge FET turns off when SOC =100%
             #icharge_battery_limited = self.ichargemax
             icharge_battery_limited = self.battery.irate*self.ichargemax
-            
-            icharge = min(icharge_rpath_limited,icharge_battery_limited)
+
+            #icharge = min(icharge_rpath_limited,icharge_battery_limited)
+            icharge = icharge_rpath_limited*self.battery.irate
             pout = vsys*icharge + self.psys
             iout = pout/vsys
             return [pout,icharge,vsys,iout]
@@ -223,6 +224,7 @@ class Charger:
         
         self.pout, self.icharge, self.vsys, self.iout = charger_state_dominant   
         self.charger_state = charger_state_dominant
+        self.error_state = loop_errors_by_loop[idx]
         self.error_idx = idx
         #elf.csbl=charger_states_by_loop
 
@@ -246,6 +248,9 @@ def batterystate_vs_t(charger):
     vsyslist=[]
     ioutlist=[]
     ichargelist=[]
+    looplist=[]
+    errorlist=[]
+
     while soc_cum < 0.99 and idx < 600:
         battery_state = Battery(battery_stack,battery_Whr,soc=soc_cum)
         charger_state = Charger(adapter_state,battery_state,psystem=system_power,imax=charger_maxcurrent,maxrate=charger_maxrate)
@@ -258,8 +263,11 @@ def batterystate_vs_t(charger):
         vsyslist.append(charger_state.vsys)
         ioutlist.append(charger_state.iout)
         ichargelist.append(charger_state.icharge) #ichargerate)
+        looplist.append(charger_state.error_idx)
+        cs = [round(x,2) for x in charger_state.error_state]
+        errorlist.append(cs)
         idx+=1
-    return [timelist,soclist,poutlist,vbatlist,vsyslist,ioutlist,ichargelist]
+    return [timelist,soclist,poutlist,vbatlist,vsyslist,ioutlist,ichargelist,looplist,errorlist]
 
 #need to look at below function.  may only need charger object as input parameter.
 def chargetime(vadapter=20,padapter=60,ncell=2, whr=50, psystem=0,imax=8,maxrate=0.8):
