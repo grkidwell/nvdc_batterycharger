@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 
 from bokeh.plotting import figure
-from bokeh.models import ColumnDataSource, Panel, HoverTool
+from bokeh.models import ColumnDataSource, Panel, HoverTool, LabelSet
 from bokeh.models.widgets import Slider, Tabs, RadioButtonGroup, PreText
 
 from bokeh.layouts import column, row, WidgetBox, gridplot
@@ -18,6 +18,27 @@ def chargetime_tab():
         df=pd.DataFrame(np.array(data[1:]).T,index=data[0],columns=['SOC','pout','vbat','vsys','icharger','ibattery','loop_index','errors'])
         df.index.name='time(hr)'
         return ColumnDataSource(df)
+
+    def capture_chargetime_kpi(src):
+        def idx(array,threshold):
+            return np.where(array >= threshold)[0][0]
+        def hrs2minutes(hours):
+            return int(np.round(hours*60,0))
+        soc_full = src.data['SOC'][-1]
+        
+        labels = ['35%','80%','full']
+        socs = [0.35, 0.8, soc_full]
+        hours = [src.data['time(hr)'][idx(src.data['SOC'],soc)] for soc in socs]
+        minutes = [hrs2minutes(hour) for hour in hours]
+        annotations = [labels[idx]+': '+str(minute)+'min' for idx, minute in enumerate(minutes)]
+        xos = [5,5,-70]
+        yos = [-15,-15, -40]
+        
+        dict = {'label':labels,'soc':socs,'minutes':minutes,'annotations':annotations,'xos':xos, 'yos':yos}
+        df = pd.DataFrame(dict,index=hours)
+        df.index.name='time(hr)'
+        
+        return ColumnDataSource(df)
     
     def make_plot(src,yaxis,plotnum):
         p = figure(plot_height = 200, plot_width = 200, 
@@ -25,6 +46,9 @@ def chargetime_tab():
                    x_axis_label = 'time (hr)')
         p.line(x='time(hr)', y=yaxis, source=src, line_width=2, color=Category20_16[plotnum*2])
         return p
+
+    def plot_kpi(kpisrc,plotfigs):
+        plotfigs['SOC'].circle(x='time(hr)', y='soc',source=kpisrc, color='blue')
     
     def update(attr, old, new):
         new_src = make_dataset(padaptor=adaptoroptions[padaptor_select.active],
@@ -33,7 +57,11 @@ def chargetime_tab():
                                psystem=psystem_select.value,
                                ichargermax=imax_select.value,
                                maxCrate=maxCrate_select.value)
+
         src.data.update(new_src.data)
+
+        new_kpisrc = capture_chargetime_kpi(new_src)
+        kpisrc.data.update(new_kpisrc.data)
         
 # create input control widgets        
     adaptoroptions=[45,65,90]
@@ -70,8 +98,11 @@ def chargetime_tab():
                        psystem=psystem_select.value,
                        ichargermax=imax_select.value,
                        maxCrate=maxCrate_select.value)
+
     
-# create grid of plots
+
+    
+# create plots
     plot_names = ['SOC','pout','vbat','vsys','icharger','ibattery']    
     plot_figs = {}
     for plot_num, plot_yaxis in enumerate(plot_names):
@@ -80,7 +111,15 @@ def chargetime_tab():
                                    ('loop errors', '@errors')])
         plot.add_tools(hover)
         plot_figs[plot_yaxis] = plot
-        
+
+# create and plot kpi section
+    kpisrc = capture_chargetime_kpi(src)
+    plot_kpi(kpisrc,plot_figs)
+    labels = LabelSet(x='time(hr)', y='soc', text='annotations', level='glyph',
+              x_offset='xos', y_offset='yos', source=kpisrc, render_mode='canvas')
+    plot_figs['SOC'].add_layout(labels)
+
+# create grid of plots        
     
     grid = gridplot([[plot_figs['pout'], plot_figs['vsys'], plot_figs['icharger']],
                      [plot_figs['SOC'],  plot_figs['vbat'], plot_figs['ibattery']]])

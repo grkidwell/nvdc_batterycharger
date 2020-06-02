@@ -76,8 +76,7 @@ class Charger:
         self.ichargemax=self.maxrate*battery.Ahr       #charging current limited by battery and charger setting
       
         self.VRhot = False
-      
-            
+
         # 4 control loops - adapter power, charge current, system voltage, max charger current
         # each loop returns 4 state variables, 1 for each control loop
 
@@ -268,6 +267,7 @@ def batterystate_vs_t(charger):
         errorlist.append(cs)
         idx+=1
     return [timelist,soclist,poutlist,vbatlist,vsyslist,ioutlist,ichargelist,looplist,errorlist]
+
 
 #need to look at below function.  may only need charger object as input parameter.
 def chargetime(vadapter=20,padapter=60,ncell=2, whr=50, psystem=0,imax=8,maxrate=0.8):
