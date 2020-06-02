@@ -218,7 +218,7 @@ Property name="value" value="Vsystem" autopos=1 normal=Right rotated=Bottom font
 Netnames
 .EndInstance
 .Instance
-Attributes type=symbol name="cap" selected=0 protected=0 x=5040 y=2520 orient=N0 
+Attributes type=symbol name="cap" selected=0 protected=0 x=4920 y=2520 orient=N0 
 Property name="ICANAL" value="0;1;0;0;" autopos=0 x=0 y=660 align=LeftTop visible=0 font=Default order=-1
 Property name="INIT_SCRIPT" value="ic_reactive" autopos=0 x=0 y=840 align=LeftBase visible=0 font=Default order=-1
 Property name="MODEL" value="C" autopos=1 normal=Left rotated=Left visible=0 font=Default order=-1
@@ -299,7 +299,7 @@ Property name="VALUESCRIPT" value="simplis_edit_mod" autopos=1 normal=Left rotat
 Netnames
 .EndInstance
 .Instance
-Attributes type=symbol name="nmos_sub" selected=0 protected=0 x=4560 y=2160 orient=M0 
+Attributes type=symbol name="nmos_sub" selected=0 protected=0 x=4560 y=2040 orient=M0 
 Property name="EDVT_TEMPLATE" value="%REF% | <nodepinlist> | REF=%REF% MODEL_NAME=%PARAM_MODEL_NAME% %PARAM_VALUES%" autopos=1 normal=Left rotated=Left visible=0 font=Default order=-1
 Property name="MODEL" value="X" autopos=1 normal=Left rotated=Left visible=0 font=Default order=-1
 Property name="PARAM_MODEL_NAME" value="PWR_NMOS_SPICE_V3" autopos=1 normal=Left rotated=Left visible=0 font=Default order=-1
@@ -463,21 +463,21 @@ Attributes x1=4200 y1=2640 x2=4320 y2=2640
 Property name="StyleNormal" value="DefaultWire" autopos=1 normal=Left rotated=Left visible=0 font=Default order=-1
 Property name="StyleSelected" value="DefaultSelected" autopos=1 normal=Left rotated=Left visible=0 font=Default order=-1
 .EndWire
-Wire x1=4320 y1=1800 x2=4320 y2=2160 net="" branch=""
+Wire x1=4320 y1=1800 x2=4320 y2=2040 net="" branch=""
 .Wire
-Attributes x1=4320 y1=1800 x2=4320 y2=2160 
+Attributes x1=4320 y1=1800 x2=4320 y2=2040 
 Property name="StyleNormal" value="DefaultWire" autopos=1 normal=Left rotated=Left visible=0 font=Default order=-1
 Property name="StyleSelected" value="DefaultSelected" autopos=1 normal=Left rotated=Left visible=0 font=Default order=-1
 .EndWire
-Wire x1=4320 y1=1800 x2=5040 y2=1800 net="" branch=""
+Wire x1=4320 y1=1800 x2=4920 y2=1800 net="" branch=""
 .Wire
-Attributes x1=4320 y1=1800 x2=5040 y2=1800 
+Attributes x1=4320 y1=1800 x2=4920 y2=1800 
 Property name="StyleNormal" value="DefaultWire" autopos=1 normal=Left rotated=Left visible=0 font=Default order=-1
 Property name="StyleSelected" value="DefaultSelected" autopos=1 normal=Left rotated=Left visible=0 font=Default order=-1
 .EndWire
-Wire x1=4320 y1=2400 x2=4320 y2=2640 net="" branch=""
+Wire x1=4320 y1=2280 x2=4320 y2=2640 net="" branch=""
 .Wire
-Attributes x1=4320 y1=2400 x2=4320 y2=2640 
+Attributes x1=4320 y1=2280 x2=4320 y2=2640 
 Property name="StyleNormal" value="DefaultWire" autopos=1 normal=Left rotated=Left visible=0 font=Default order=-1
 Property name="StyleSelected" value="DefaultSelected" autopos=1 normal=Left rotated=Left visible=0 font=Default order=-1
 .EndWire
@@ -505,33 +505,33 @@ Attributes x1=4560 y1=3480 x2=4560 y2=3840
 Property name="StyleNormal" value="DefaultWire" autopos=1 normal=Left rotated=Left visible=0 font=Default order=-1
 Property name="StyleSelected" value="DefaultSelected" autopos=1 normal=Left rotated=Left visible=0 font=Default order=-1
 .EndWire
-Wire x1=4560 y1=3480 x2=5040 y2=3480 net="" branch=""
+Wire x1=4560 y1=3480 x2=4920 y2=3480 net="" branch=""
 .Wire
-Attributes x1=4560 y1=3480 x2=5040 y2=3480 
+Attributes x1=4560 y1=3480 x2=4920 y2=3480 
 Property name="StyleNormal" value="DefaultWire" autopos=1 normal=Left rotated=Left visible=0 font=Default order=-1
 Property name="StyleSelected" value="DefaultSelected" autopos=1 normal=Left rotated=Left visible=0 font=Default order=-1
 .EndWire
-Wire x1=5040 y1=1800 x2=5040 y2=2520 net="" branch=""
+Wire x1=4920 y1=1800 x2=4920 y2=2520 net="" branch=""
 .Wire
-Attributes x1=5040 y1=1800 x2=5040 y2=2520 
+Attributes x1=4920 y1=1800 x2=4920 y2=2520 
 Property name="StyleNormal" value="DefaultWire" autopos=1 normal=Left rotated=Left visible=0 font=Default order=-1
 Property name="StyleSelected" value="DefaultSelected" autopos=1 normal=Left rotated=Left visible=0 font=Default order=-1
 .EndWire
-Wire x1=5040 y1=1800 x2=5160 y2=1800 net="" branch=""
+Wire x1=4920 y1=1800 x2=5160 y2=1800 net="" branch=""
 .Wire
-Attributes x1=5040 y1=1800 x2=5160 y2=1800 
+Attributes x1=4920 y1=1800 x2=5160 y2=1800 
 Property name="StyleNormal" value="DefaultWire" autopos=1 normal=Left rotated=Left visible=0 font=Default order=-1
 Property name="StyleSelected" value="DefaultSelected" autopos=1 normal=Left rotated=Left visible=0 font=Default order=-1
 .EndWire
-Wire x1=5040 y1=2760 x2=5040 y2=3480 net="" branch=""
+Wire x1=4920 y1=2760 x2=4920 y2=3480 net="" branch=""
 .Wire
-Attributes x1=5040 y1=2760 x2=5040 y2=3480 
+Attributes x1=4920 y1=2760 x2=4920 y2=3480 
 Property name="StyleNormal" value="DefaultWire" autopos=1 normal=Left rotated=Left visible=0 font=Default order=-1
 Property name="StyleSelected" value="DefaultSelected" autopos=1 normal=Left rotated=Left visible=0 font=Default order=-1
 .EndWire
-Wire x1=5040 y1=3480 x2=5640 y2=3480 net="" branch=""
+Wire x1=4920 y1=3480 x2=5640 y2=3480 net="" branch=""
 .Wire
-Attributes x1=5040 y1=3480 x2=5640 y2=3480 
+Attributes x1=4920 y1=3480 x2=5640 y2=3480 
 Property name="StyleNormal" value="DefaultWire" autopos=1 normal=Left rotated=Left visible=0 font=Default order=-1
 Property name="StyleSelected" value="DefaultSelected" autopos=1 normal=Left rotated=Left visible=0 font=Default order=-1
 .EndWire
@@ -614,9 +614,9 @@ Property name="StyleNormal" value="DefaultWire" autopos=1 normal=Left rotated=Le
 Property name="StyleSelected" value="DefaultSelected" autopos=1 normal=Left rotated=Left visible=0 font=Default order=-1
 .EndWire
 Text value=""
-LicenseInfo version="8.00j" feats=Basic|AD|Micron|Mcore2|Schematic|Advanced|Sim|Demo|Rtn|SIMPLIS_IF|beta serial=unknown user="unknown" code=unknown product="iSim PE" binarch=x86 system="WINNT/10.0/x64/17024540672/4/1/8/683836969"
+LicenseInfo version="8.00j" feats=Basic|AD|Micron|Mcore2|Schematic|Advanced|Sim|Demo|Rtn|SIMPLIS_IF|beta serial=unknown user="unknown" code=unknown product="iSim PE" binarch=x86 system="WINNT/10.0/x64/6290911232/2/2/2/884718972"
 SimulatorMode value="Simplis"
-View x=0 y=-20 zoomlevel=31 zoom=8 snapgrid=120 offsetX=0 offsetY=0
-Property name="UserVersion" value="1" type=value
+View x=0 y=0 zoomlevel=31 zoom=8 snapgrid=120 offsetX=0 offsetY=0
+Property name="UserVersion" value="2" type=value
 .EndSchematic
 .EndComponent
